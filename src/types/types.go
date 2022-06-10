@@ -5,6 +5,7 @@ type TaskMetaResponse struct {
 	Script  string
 	Args    string
 	Account string
+	Timeout int
 }
 
 type ReportTask struct {

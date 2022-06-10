@@ -2,6 +2,7 @@ package timer
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os/exec"
@@ -9,6 +10,8 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/toolkits/pkg/file"
 	"github.com/toolkits/pkg/runner"
@@ -33,6 +36,7 @@ type Task struct {
 
 	Args    string
 	Account string
+	Timeout int
 }
 
 func (t *Task) SetStatus(status string) {
@@ -147,7 +151,7 @@ func (t *Task) prepare() error {
 		t.Account = account
 	} else {
 		// 从远端读取，再写入磁盘
-		script, args, account, err := client.Meta(t.Id)
+		script, args, account, timeout, err := client.Meta(t.Id)
 		if err != nil {
 			log.Println("E: query task meta fail:", err)
 			return err
@@ -188,6 +192,7 @@ func (t *Task) prepare() error {
 
 		t.Args = args
 		t.Account = account
+		t.Timeout = timeout
 	}
 
 	return nil
@@ -258,18 +263,34 @@ func runProcess(t *Task) {
 	t.SetAlive(true)
 	defer t.SetAlive(false)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(t.Timeout*2)*time.Second)
+	defer cancel()
+
+	waitChan := make(chan struct{}, 1)
+	defer close(waitChan)
+
+	// 超时杀掉进程组 或正常退出
+	go func() {
+		select {
+		case <-ctx.Done():
+			log.Printf("E: timeout kill task [%d] ppid:%d", t.Id, t.Cmd.Process.Pid)
+			syscall.Kill(-t.Cmd.Process.Pid, syscall.SIGKILL)
+		case <-waitChan:
+		}
+	}()
+
 	err := t.Cmd.Wait()
 	if err != nil {
 		if strings.Contains(err.Error(), "signal: killed") {
 			t.SetStatus("killed")
-			log.Printf("D: process of task[%d] killed", t.Id)
+			log.Printf("E: process of task[%d] killed", t.Id)
 		} else if strings.Contains(err.Error(), "signal: terminated") {
 			// kill children process manually
 			t.SetStatus("killed")
-			log.Printf("D: process of task[%d] terminated", t.Id)
+			log.Printf("E: process of task[%d] terminated", t.Id)
 		} else {
 			t.SetStatus("failed")
-			log.Printf("D: process of task[%d] return error: %v", t.Id, err)
+			log.Printf("E: process of task[%d] return error: %v", t.Id, err)
 		}
 	} else {
 		t.SetStatus("success")
