@@ -1,0 +1,90 @@
+curl --location --request  GET 'localhost:10090/ping'
+
+curl --location --request  GET 'localhost:10090/pid'
+
+curl --location --request  GET 'localhost:10090/addr'
+
+curl --location --request  GET 'localhost:10090/version'
+
+
+curl --location --request  GET 'localhost:2090/ping'
+
+curl --location --request  GET 'localhost:2090/pid'
+
+curl --location --request  GET 'localhost:2090/addr'
+
+curl --location --request  GET 'localhost:2090/version'
+
+
+curl --location --request  GET 'localhost:10090/ibex/v1/tasks' -u ibex:ibex
+
+curl --location --request POST 'localhost:10090/ibex/v1/tasks' \
+-u ibex:ibex \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "just a echo",
+    "account": "root",
+    "batch": 0,
+    "tolerance": 0,
+    "timeout": 10,
+    "pause": "",
+    "script": "#!/bin/sh\necho hello;date > nice.date;echo world",
+    "action": "start",
+    "creator": "qinxiaohui",
+    "hosts": ["notebook.fa"]
+}'
+
+curl --location --request GET 'localhost:10090/ibex/v1/task/1' -u ibex:ibex  
+
+curl --location --request GET 'localhost:10090/ibex/v1/task/1/result' -u ibex:ibex  
+
+curl --location --request GET 'localhost:10090/ibex/v1/task/1/stdout' -u ibex:ibex 
+
+curl --location --request GET 'localhost:10090/ibex/v1/tasks/done-ids/?ids=1' -u ibex:ibex 
+
+    "script": "#!/bin/sh\nsh ~/.bash_profile;env>abcd.tt;who am i>ab.tt;history>abc.tt",
+
+curl --location --request POST 'localhost:10090/ibex/v1/tasks' \
+-u ibex:ibex \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "just a echo",
+    "account": "root",
+    "batch": 0,
+    "tolerance": 0,
+    "timeout": 10,
+    "pause": "",
+    "script": "env>abcd.tt;who am i>ab.tt;history>abc.tt",
+    "action": "start",
+    "creator": "qinxiaohui",
+    "hosts": ["notebook.fa"]
+}'
+
+curl --location --request POST 'localhost:10090/ibex/v1/tasks' \
+-u ibex:ibex \
+--header 'Content-Type: application/json' \
+--data '{
+    "title": "just a echo",
+    "account": "root",
+    "batch": 0,
+    "tolerance": 0,
+    "timeout": 10,
+    "pause": "",
+    "script": "top -b",
+    "action": "start",
+    "creator": "qinxiaohui",
+    "hosts": ["notebook.fa"]
+}'
+
+curl --location --request PUT 'localhost:10090/ibex/v1/task/22/action' \
+-u ibex:ibex \
+--header 'Content-Type: application/json' \
+--data '{
+    "action": "kill"
+}'
+
+#!/bin/sh
+who am i>ab.tt;history>abc.tt
+
+cmd = exec.Command("sh", "-c", sh)
+
