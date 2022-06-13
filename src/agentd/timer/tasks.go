@@ -1,7 +1,9 @@
 package timer
 
 import (
+	"golang.org/x/text/encoding/simplifiedchinese"
 	"log"
+	"runtime"
 
 	"github.com/ulricqin/ibex/src/types"
 )
@@ -11,6 +13,27 @@ type LocalTasksT struct {
 }
 
 var Locals = &LocalTasksT{M: make(map[int64]*Task)}
+
+type Charset string
+
+const (
+	UTF8    = Charset("UTF-8")
+	GB18030 = Charset("GB18030")
+)
+
+func ConvertByte2String(byte []byte, charset Charset) string {
+	var str string
+	switch charset {
+	case GB18030:
+		var decodeBytes, _ = simplifiedchinese.GB18030.NewDecoder().Bytes(byte)
+		str = string(decodeBytes)
+	case UTF8:
+		fallthrough
+	default:
+		str = string(byte)
+	}
+	return str
+}
 
 func (lt *LocalTasksT) ReportTasks() []types.ReportTask {
 	ret := make([]types.ReportTask, 0, len(lt.M))
@@ -22,10 +45,13 @@ func (lt *LocalTasksT) ReportTasks() []types.ReportTask {
 			// intermediate state
 			continue
 		}
-
-		rt.Stdout = t.GetStdout()
-		rt.Stderr = t.GetStderr()
-
+		if runtime.GOOS == "windows" {
+			rt.Stdout = ConvertByte2String([]byte(t.GetStdout()), "GB18030")
+			rt.Stderr = ConvertByte2String([]byte(t.GetStderr()), "GB18030")
+		} else {
+			rt.Stdout = t.GetStdout()
+			rt.Stderr = t.GetStderr()
+		}
 		stdoutLen := len(rt.Stdout)
 		stderrLen := len(rt.Stderr)
 

@@ -16,3 +16,6 @@ start_agentd:
 
 pack: build
 	tar zcvf $(APP_BIN)-$(APP_VER).tar.gz etc sql $(APP_BIN)
+
+# windows
+# go build -ldflags "-w -s -X main.VERSION=$1.0.0" -o ibex.exe ./src/cmd
